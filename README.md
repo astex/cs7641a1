@@ -35,3 +35,9 @@ think of is this (run from the project directory):
 ```bash
 $ pip install -r requirements.txt
 ```
+
+## License
+
+This is a homework assignment, not production software. You may run it and look
+at it, but may not redistribute it or use it in any production system for any
+reason.
