@@ -4,3 +4,7 @@
 # IMDB data (not licensed for redistribution)
 data/imdb/*
 !data/imdb/get.sh
+
+# NYT data (from API)
+data/nyt/*
+!data/nyt/get.sh
