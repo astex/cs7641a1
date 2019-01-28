@@ -36,6 +36,18 @@ think of is this (run from the project directory):
 $ pip install -r requirements.txt
 ```
 
+## Data
+
+[Details](data)
+
+You will also need to retrieve some data from the internet. You can check out
+the details for each data set in the link above. Or you can just run the
+shortcut script to grab everything:
+
+```bash
+$ ./data/get.sh
+```
+
 ## License
 
 This is a homework assignment, not production software. You may run it and look

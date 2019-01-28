@@ -1,0 +1,6 @@
+# vim
+.sw[po]
+
+# IMDB data (not licensed for redistribution)
+data/imdb/*
+!data/imdb/get.sh
