@@ -33,16 +33,14 @@ above since there is some serious rate limiting on this API, but this should do
 in a pinch.
 
 ```bash
-$ ./data/nyt/get.sh [year]
+$ ./data/nyt/get.sh
 ```
 
-Assuming you have `curl`, this will put the data for the indicated year into
+Assuming you have `curl`, this will put the data for the last five years into
 files named like `data/nyt/[year]-[month].json`.
 
-The Times does some rate limiting here, so you can only fetch about a year at a
-time. Even that small of a request will sometimes be rate limited resulting in
-some missing data (i.e the file contains an error response). The parser for
-this data ignores errors, so this data will need to be refreshed to be used.
-
-The parent `data/get.sh` script waits a minute between requests in order to
-work around this rate limiting.
+The Times does some rate limiting here, so this will sleep for ten seconds
+between each month (i.e it will take a while). Even at that rate, requests
+will sometimes be rate limited resulting in some missing data (i.e the file
+contains an error response). The parser for this data ignores errors, so this
+data will need to be refreshed to be used.
