@@ -12,6 +12,6 @@ readonly DATASETS=(
     "title.ratings")
 
 for dataset in "${DATASETS[@]}"; do
-    curl "$IMDB_URL$dataset.tsv.gz" > "$DATA_DIR$dataset.tsv.gz";
-    gunzip "$DATA_DIR$dataset.tsv.gz";
+    curl -s "$IMDB_URL$dataset.tsv.gz" > "$DATA_DIR$dataset.tsv.gz";
+    gunzip -f "$DATA_DIR$dataset.tsv.gz";
 done

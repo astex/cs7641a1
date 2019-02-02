@@ -33,7 +33,7 @@ above since there is some serious rate limiting on this API, but this should do
 in a pinch.
 
 ```bash
-$ ./data/imdb/get.sh [year]
+$ ./data/nyt/get.sh [year]
 ```
 
 Assuming you have `curl`, this will put the data for the indicated year into
