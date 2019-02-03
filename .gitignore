@@ -8,3 +8,9 @@ data/imdb/*
 # NYT data (from API)
 data/nyt/*
 !data/nyt/get.sh
+
+# LaTeX artifacts
+paper/*
+!paper/paper.tex
+!paper/paper.bib
+!paper/makefile
