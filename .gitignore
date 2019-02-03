@@ -11,6 +11,7 @@ data/nyt/*
 
 # LaTeX artifacts
 paper/*
+!paper/paper.pdf
 !paper/paper.tex
 !paper/paper.bib
 !paper/makefile
