@@ -48,6 +48,12 @@ shortcut script to grab everything:
 $ ./data/get.sh
 ```
 
+## Paper
+
+You can find the final turned-in paper for the project [here](paper/paper.pdf).
+This is compiled latex/biblatex. You can compile it yourself by navigating to
+the `paper` directory and running `make`.
+
 ## License
 
 This is a homework assignment, not production software. You may run it and look
