@@ -15,3 +15,7 @@ paper/*
 !paper/paper.tex
 !paper/paper.bib
 !paper/makefile
+
+# Python
+__pycache__
+*.pyc
