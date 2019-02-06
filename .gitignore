@@ -1,5 +1,5 @@
 # vim
-.sw[po]
+*.sw[po]
 
 # IMDB data (not licensed for redistribution)
 data/imdb/*
