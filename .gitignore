@@ -9,6 +9,9 @@ data/imdb/*
 data/nyt/*
 !data/nyt/get.sh
 
+# California housing (from scikit-learn)
+data/california/*
+
 # LaTeX artifacts
 paper/*
 !paper/paper.pdf

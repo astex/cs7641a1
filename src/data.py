@@ -49,3 +49,23 @@ class DataSet:
             data.names.append(name)
             data.labels.append(label)
         return ldata, rdata
+
+
+def partition(prob, *data):
+    """Splits data into two partitions.
+    
+    Args:
+        prob: The probability that the data is split into the left partition.
+        data: Any number of datasets of the same size. These will be
+            partitioned together, so if the first element of one dataset goes
+            to the right then the first element of all the other datasets will
+            do the same.
+        
+    Returns:
+        (left datasets, right datasets)
+    """
+    ldata = []
+    rdata = []
+    for item in zip(*data):
+        (ldata if random.uniform(0, 1) < prob else rdata).append(item)
+    return list(zip(*ldata)), list(zip(*rdata))
