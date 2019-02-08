@@ -1,5 +1,7 @@
 """A common module for working with data sets."""
 
+import random
+
 
 class DataSet:
     """A collection of imdb data."""
@@ -39,11 +41,11 @@ class DataSet:
         Returns:
             (left dataset, right datset)
         """
-        ldata = DataSet(features, [], [], [])
-        rdata = DataSet(features, [], [], [])
+        ldata = DataSet(self.features, [], [], [])
+        rdata = DataSet(self.features, [], [], [])
         for sample, name, label in zip(self.samples, self.names, self.labels):
             data = ldata if random.uniform(0, 1) < prob else rdata
             data.samples.append(sample)
-            data.names.append(names)
-            data.labels.append(labels)
+            data.names.append(name)
+            data.labels.append(label)
         return ldata, rdata
