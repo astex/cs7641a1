@@ -25,3 +25,6 @@ __pycache__
 
 # OSX
 .DS_Store
+
+# The paper
+paper/*
