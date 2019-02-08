@@ -1,32 +1,14 @@
 """Fit california housing data to a tree."""
 
 import pygal
-import random
 import sklearn.tree
-import sklearn.datasets
 from .. import app
 from .. import data as datalib
+from . import data as caldata
 
 
 MAX_DEPTH = 26
 SIZE_INTERVAL = .01
-
-
-def get_data(datadir, testprob):
-    """Gets training and test data sets.
-
-    Args:
-        datadir: The directory where the data can be found.
-        testprob: The probability that a given sample will be set aside for
-            testing.
-
-    Returns:
-        ((test samples, test labels), (training samples, training labels))
-    """
-    data = sklearn.datasets.fetch_california_housing(
-        datadir,
-        return_X_y=True)
-    return datalib.partition(testprob, *data)
 
 
 def plot_depth(tdata, ldata, outdir):
@@ -65,17 +47,8 @@ def plot_size(tdata, ldata, outdir):
 
 
 def main(args):
-    tdata, ldata = get_data(args.datadir, args.testprob)
-
-    tsamples, tlabels = tdata
-    lsamples, llabels = ldata
-
-    average = sum(llabels + tlabels) / len(llabels + tlabels)
-    llabels = [1 if llabel > average else -1 for llabel in llabels]
-    tlabels = [1 if tlabel > average else -1 for tlabel in tlabels]
-
-    tdata = (tsamples, tlabels)
-    ldata = (lsamples, llabels)
+    tdata, ldata = caldata.get_data(args.datadir, args.testprob)
+    tdata, ldata = caldata.make_boolean(tdata, ldata)
 
     plot_depth(tdata, ldata, args.outdir)
     plot_size(tdata, ldata, args.outdir)
