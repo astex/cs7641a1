@@ -56,7 +56,11 @@ def main(args):
 
         logging.info("plotting %s...", plotfunc)
         plotter = datalib.Plotter(xtitle)
-        plot(data, plotter)
+        try:
+            plot(data, plotter)
+        except Exception:
+            logging.exception("error in %s. continuing...", plotfunc)
+            continue
 
         plotter.learning_plot.render_to_file(
             args.outdir + "/%s.svg" % (plotfunc,))
