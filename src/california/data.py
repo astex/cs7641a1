@@ -1,10 +1,11 @@
 """A library for working with the california data."""
 
+import logging
 import sklearn.datasets
 from .. import data as datalib
 
 
-def get_data(datadir, testprob):
+def get_data(datadir):
     """Gets training and test data sets.
 
     Args:
@@ -15,22 +16,26 @@ def get_data(datadir, testprob):
     Returns:
         ((test samples, test labels), (training samples, training labels))
     """
-    data = sklearn.datasets.fetch_california_housing(
+    return sklearn.datasets.fetch_california_housing(
         datadir,
         return_X_y=True)
-    return datalib.partition(testprob, *data)
 
 
-def make_boolean(tdata, ldata):
+def make_boolean(data):
     """Transforms labels into two classes (>avg, <avg)."""
-    tsamples, tlabels = tdata
-    lsamples, llabels = ldata
+    logging.info("transforming labels...")
+    samples, labels = data
+    average = sum(labels) / len(labels)
+    labels = [1 if label > average else -1 for label in labels]
+    return samples, labels
 
-    average = sum(llabels + tlabels) / len(llabels + tlabels)
-    llabels = [1 if llabel > average else -1 for llabel in llabels]
-    tlabels = [1 if tlabel > average else -1 for tlabel in tlabels]
 
-    tdata = (tsamples, tlabels)
-    ldata = (lsamples, llabels)
-
-    return tdata, ldata
+def normalize(data):
+    """Scales inputs to [0, 1]."""
+    logging.info("scaling...")
+    samples, labels = data
+    samples = list(zip(*samples))
+    scale = [(lambda x: (x - min(s)) / (max(s) - min(s))) for s in samples]
+    samples = [[f(x) for x in s] for f, s in zip(scale, samples)]
+    samples = list(zip(*samples))
+    return samples, labels

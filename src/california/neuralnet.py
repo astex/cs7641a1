@@ -77,8 +77,9 @@ PLOTFUNCS = {
 
 
 def main(args):
-    tdata, ldata = caldata.get_data(args.datadir, args.testprob)
-    tdata, ldata = caldata.make_boolean(tdata, ldata)
+    data = caldata.get_data(args.datadir)
+    data = caldata.make_boolean(data)
+    tdata, ldata = datalib.partition(args.testprob, *data)
     PLOTFUNCS[args.plotfunc](tdata, ldata, args.outdir)
 
 
