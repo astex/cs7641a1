@@ -2,6 +2,7 @@
 
 import sklearn.exceptions
 import sklearn.neural_network
+import warnings
 from .. import data as datalib
 
 

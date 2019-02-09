@@ -1,5 +1,6 @@
 """A common module for working with data sets."""
 
+import logging
 import pygal
 import random
 import time
@@ -174,6 +175,7 @@ class Plotter:
         return plot
 
     def plot(self, classifier, xval, ldata, tdata):
+        logging.info("plotting data point %s...", xval)
         timer = _timer()
         classifier.fit(*ldata)
         self.ftimes.append((xval, next(timer)))
