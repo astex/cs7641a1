@@ -1,78 +1,87 @@
-"""Fit california housing data to a neural net."""
+"""Fit california housing data using gradient descent boosting."""
 
 import pygal
-import sklearn.neural_network
+import sklearn.ensemble
 from .. import app
 from .. import data as datalib
 from . import data as caldata
 
 
-SIZE_INTERVAL = .01
-MAX_ITER = 400
-ITER_STEP = 20
-MAX_HIDDEN = 40
-HIDDEN_STEP = 1
+SIZE_STEP = .01
+EST_STEP = 10
+EST_MAX = 400
+RATE_STEP = .01
+RATE_MAX = .99
 
 
 def plot_size(tdata, ldata, outdir):
     lerr = []
     terr = []
 
-    size = SIZE_INTERVAL
+    size = SIZE_STEP
     while size < 1.01:
         data, _ = datalib.partition(size, *ldata)
-        classifier = sklearn.neural_network.MLPClassifier(
-            hidden_layer_sizes=(8,))
+        classifier = sklearn.ensemble.GradientBoostingClassifier()
         classifier.fit(*data)
         lerr.append((size, 1 - classifier.score(*data)))
         terr.append((size, 1 - classifier.score(*tdata)))
-        size += SIZE_INTERVAL
+        size += SIZE_STEP
 
-    plot = pygal.XY(stroke=False)
+    plot = pygal.XY(
+        stroke=False,
+        x_title="data_portion",
+        y_title="score")
     plot.add("training", lerr)
     plot.add("testing", terr)
-    plot.render_to_file(outdir + "/neraulnet_size.svg")
+    plot.render_to_file(outdir + "/boosting_size.svg")
 
 
-def plot_iter(tdata, ldata, outdir):
+def plot_est(tdata, ldata, outdir):
     lerr = []
     terr = []
 
-    for max_iter in range(ITER_STEP, MAX_ITER, ITER_STEP):
-        classifier = sklearn.neural_network.MLPClassifier(
-            hidden_layer_sizes=(8,),
-            max_iter=max_iter)
+    for est in range(EST_STEP, EST_MAX, EST_STEP):
+        classifier = sklearn.ensemble.GradientBoostingClassifier(
+            n_estimators=est)
         classifier.fit(*ldata)
-        lerr.append((max_iter, 1 - classifier.score(*ldata)))
-        terr.append((max_iter, 1 - classifier.score(*tdata)))
+        lerr.append((est, 1 - classifier.score(*ldata)))
+        terr.append((est, 1 - classifier.score(*tdata)))
 
-    plot = pygal.XY(stroke=False)
+    plot = pygal.XY(
+        stroke=False,
+        x_title="n_estimators",
+        y_title="score")
     plot.add("training", lerr)
     plot.add("testing", terr)
-    plot.render_to_file(outdir + "/neuralnet_iter.svg")
+    plot.render_to_file(outdir + "/boosting_est.svg")
 
 
-def plot_hidden(tdata, ldata, outdir):
+def plot_rate(tdata, ldata, outdir):
     lerr = []
     terr = []
 
-    for hidden in range(HIDDEN_STEP, MAX_HIDDEN, HIDDEN_STEP):
-        classifier = sklearn.neural_network.MLPClassifier(
-            hidden_layer_sizes=(hidden,))
+    rate = RATE_STEP
+    while rate < RATE_MAX:
+        classifier = sklearn.ensemble.GradientBoostingClassifier(
+            learning_rate=rate)
         classifier.fit(*ldata)
-        lerr.append((hidden, 1 - classifier.score(*ldata)))
-        terr.append((hidden, 1 - classifier.score(*tdata)))
+        lerr.append((rate, 1 - classifier.score(*ldata)))
+        terr.append((rate, 1 - classifier.score(*tdata)))
+        rate += RATE_STEP
 
-    plot = pygal.XY(stroke=False)
+    plot = pygal.XY(
+        stroke=False,
+        x_title="learning_rate",
+        y_title="score")
     plot.add("training", lerr)
     plot.add("testing", terr)
-    plot.render_to_file(outdir + "/neuralnet_hidden.svg")
+    plot.render_to_file(outdir + "/boosting_rate.svg")
 
 
 PLOTFUNCS = {
     "size": plot_size,
-    "iter": plot_iter,
-    "hidden": plot_hidden,
+    "est": plot_est,
+    "rate": plot_rate,
 }
 
 
