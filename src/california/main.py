@@ -7,6 +7,7 @@ from .. import app
 from .. import data as datalib
 
 from . import boosting
+from . import knn
 from . import neuralnet
 from . import svm
 from . import tree
@@ -21,6 +22,7 @@ def get_data(datadir):
 
 def register(parser):
     boosting.register()
+    knn.register()
     neuralnet.register()
     svm.register()
     tree.register()
