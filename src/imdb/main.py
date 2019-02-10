@@ -7,6 +7,7 @@ from .. import app
 from .. import data as datalib
 
 from . import boosting
+from . import knn
 from . import neuralnet
 from . import read as readlib
 from . import svm
@@ -15,6 +16,7 @@ from . import tree
 
 def register(parser):
     boosting.register()
+    knn.register()
     neuralnet.register()
     svm.register()
     tree.register()
@@ -53,7 +55,7 @@ def main(args):
         datalib.get_plotfuncs() if args.plotfuncs == ["all"] else
         args.plotfuncs)
 
-    for plotfunc in args.plotfuncs:
+    for plotfunc in plotfuncs:
         plot = datalib.get_plotfunc(plotfunc)
         xtitle = datalib.get_xtitle(plotfunc)
 
@@ -61,6 +63,15 @@ def main(args):
         plotter = datalib.Plotter(xtitle)
         try:
             plot(data, plotter)
+        except KeyboardInterrupt:
+            logging.info("caught keyboard interrupt. plotting and continuing.")
+            plotter.learning_plot.render_to_file(
+                args.outdir + "/%s.svg" % (plotfunc,))
+            plotter.fit_timing_plot.render_to_file(
+                args.outdir + "/%s_ftime.svg" % (plotfunc,))
+            plotter.score_timing_plot.render_to_file(
+                args.outdir + "/%s_stime.svg" % (plotfunc,))
+            continue
         except Exception:
             logging.exception("error in %s. continuing...", plotfunc)
             continue

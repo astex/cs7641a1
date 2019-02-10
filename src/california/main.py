@@ -52,7 +52,7 @@ def main(args):
         datalib.get_plotfuncs() if args.plotfuncs == ["all"] else
         args.plotfuncs)
 
-    for plotfunc in args.plotfuncs:
+    for plotfunc in plotfuncs:
         plot = datalib.get_plotfunc(plotfunc)
         xtitle = datalib.get_xtitle(plotfunc)
 
