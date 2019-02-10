@@ -1,184 +1,134 @@
 """A module to read imdb data into features."""
 
-import itertools
-import random
-import sqlite3
-from .. import app
-from .. import data as data_lib
+import logging
 
 
-def get_titles(conn):
-    """Gets the titles to consider for this problem.
-
-    Only movies made in the last ten years are considered.
-
-    Args:
-        conn: A sqlite database connection.
-
-    Returns:
-        [(tconst, title), ...]
-    """
-    curs = conn.cursor()
-    curs.execute(
-        "SELECT tconst, primaryTitle FROM titles\n"
-        "\tWHERE\n"
-        "\t\tCAST(startYear AS INTEGER) > 2008 AND\n"
-        "\t\ttitleType = \"movie\";")
+def listall(curs):
+    """Yields results from cursor with appropriate nulls."""
     row = curs.fetchone()
     while row:
+        row = tuple(r if r != "\\N" else None for r in row)
         yield row
         row = curs.fetchone()
 
 
-def get_names(conn, nconsts):
-    """Gets the names to use for this problem.
+def list_ratings(conn):
+    """Yields from the ratings table.
 
     Args:
-        conn: A sqlite database connection.
-        names: Only include names with these nconsts.
+        conn: A sqlite connection.
 
-    Returns:
-        [(nconst, name), ...]
+    Yields:
+        (tcons, rating)
     """
     curs = conn.cursor()
-    curs.execute(
-        "SELECT nconst, primaryName FROM names\n"
-        "\tWHERE nconst IN (%s);" %
-        (", ".join("?" for _ in nconsts)),
-        nconsts)
-    row = curs.fetchone()
-    while row:
-        yield row
-        row = curs.fetchone()
+    curs.execute("SELECT tconst, averageRating FROM ratings;")
+    for tconst, rating in listall(curs):
+        rating = float(rating) if rating else None
+        yield tconst, rating
 
 
-def get_ratings(conn, tconsts):
-    """Gets the rating of each of the indicated titles.
+def list_titles(conn):
+    """Yields from the titles table.
 
     Args:
-        conn: A sqlite database connection.
-        tconsts: Only include ratings for these tconsts.
-
-    Returns:
-        [(tconst, rating), ...]
-    """
-    curs = conn.cursor()
-    curs.execute(
-        "SELECT tconst, averageRating FROM ratings\n"
-        "\tWHERE tconst IN (%s);" %
-        (", ".join("?" for _ in tconsts)),
-        tconsts)
-    row = curs.fetchone()
-    while row:
-        yield row
-        row = curs.fetchone()
-
-
-def get_principals(conn, tconsts):
-    """Gets the name/title associations for a list of titles.
-
-    Only actors and directors are considered.
-
-    Args:
-        conn: A sqlite database connection.
-        tconsts: Only include names for these tconsts.
-
-    Returns:
-        [(tconst, nconst), ...] sorted by tconst.
-    """
-    curs = conn.cursor()
-    curs.execute(
-        ("SELECT tconst, nconst FROM principals\n"
-         "\tWHERE\n"
-         "\t\ttconst IN (%s) AND\n"
-         "\t\tcategory IN (\"actor\", \"director\", \"self\")\n"
-         "\tORDER BY tconst;") %
-        (", ".join("?" for _ in tconsts)),
-        tconsts)
-    row = curs.fetchone()
-    while row:
-        yield row
-        row = curs.fetchone()
-
-
-def load_dataset(conn, prob):
-    """Load a uniform learning and test subset of titles from imdb.
-
-    The features for each dataset are whether or not a given actor or director
-    participated in the title.
+        conn: A sqlite connection.
     
+    Yields:
+        (tconst, title, year, runtime, genres)
+    """
+    curs = conn.cursor()
+    curs.execute("""
+        SELECT tconst, primaryTitle, startYear, runtimeMinutes, genres
+            FROM titles
+            WHERE titleType = "movie";
+    """)
+    for row in listall(curs):
+        id_, title, year, runtime, genres = row
+        genres = set(genres.split(',')) if genres else []
+        year = int(year) if year else None
+        runtime = float(runtime) if runtime else None
+        yield id_, title, year, runtime, genres
+
+
+def list_name_counts(conn, rating):
+    """Lists the number of big-name actors in each title.
+
+    Only actors who have starred in at least five movies of higher-than-average
+    rating are considered.
+
     Args:
-        conn: A sqlite database connection.
-        prob: The probability of selecting a given title.
+        conn: A sqlite connection.
+        rating: Only consider actors that have been in more than five movies
+            with at least this rating.
+
+    Yields:
+        (tconst, count)
+    """
+    curs = conn.cursor()
+    curs.execute("""
+        SELECT p.tconst, count(*) FROM principals AS p
+            WHERE p.nconst IN (
+                SELECT nconst FROM (SELECT np.nconst, count(*) AS c
+                    FROM principals AS np
+                    INNER JOIN titles AS t ON t.tconst = np.tconst
+                    INNER JOIN ratings AS r ON r.tconst = np.tconst
+                    WHERE
+                        t.titleType = "movie" AND
+                        np.category IN ("actor", "self", "director") AND
+                        CAST(r.averageRating AS REAL) > ?
+                    GROUP BY np.nconst
+                    HAVING c > ?))
+            GROUP BY p.tconst;
+    """, (rating, 5))
+    yield from listall(curs)
+
+
+def get_data(conn):
+    """Gets some movie data from the database.
+
+    Args:
+        conn: A sqlite connection.
 
     Returns:
-        A dataset populated from the database.
+        (samples, labels)
+
+        Samples is a 2D matrix where each row represents a movie title and each
+        column is a feature as follows:
+
+            - n_actors: The number of big name (in at least five movies with a
+                higher-than-average rating) actors in the film.
+            - year: The year the movie came out.
+            - runtime: The runtime of the movie.
+            - genre1, genre2, ...: Boolean (0/1) features indicating whether
+              the movie is associated with a genre for all genres in the
+              database. There are presently twenty-eight of these.
+
+        Labels is a list indicating whether the sample with the same index has
+        above-average (1), below-average (0), or no (-1) rating.
     """
-    # [(tconst, title), ...]
-    titles = [t for t in get_titles(conn) if random.uniform(0, 1) < prob]
-    tconsts = [k for k, _ in titles]
-    # {tconst: rating, ...}
-    ratings = dict(
-        (t, int(round(float(r))) if r else None) for t, r in
-        get_ratings(conn, tconsts))
-    # {tconst: [nconst, ...], ...}
-    principals = {
-        k: set(n for t, n in v)
-        for k, v in itertools.groupby(
-            get_principals(conn, tconsts),
-            lambda p: p[0])}
-    # {nconst: name, ...}
-    names = dict(get_names(
-        conn,
-        list(set(n for ns in principals.values() for n in ns))))
+    logging.info("getting ratings...")
+    ratings = dict(list_ratings(conn))
+    rating_values = [v for v in ratings.values() if v is not None]
+    average_rating = sum(rating_values) / len(rating_values)
+    normalized_rating = lambda i: (
+        -1 if ratings.get(i) is None else
+        0 if ratings[i] < average_rating else
+        1)
 
-    return data_lib.DataSet(
-        ["%s is involved in the film." % (v,) for v in names.values()],
-        [
-            [n in principals.get(i, set()) for n in names.keys()]
-            for i, _ in titles],
-        [t for _, t in titles],
-        [ratings.get(i, None) for i, _ in titles])
+    logging.info("getting titles...")
+    titles = list(list_titles(conn))
+    genres = list(set(g for _, _, _, _, gs in titles for g in gs))
+    genre_features = lambda gs: [g in gs for g in genres]
 
+    logging.info("getting big names...")
+    namecounts = dict(list_name_counts(conn, average_rating))
+    name_feature = lambda i: namecounts.get(i, 0)
 
-def main(args):
-    """Load a dataset and print some stuff about it."""
-    conn = sqlite3.connect(args.database_uri)
-    try:
-        data = load_dataset(conn, args.prob)
-    finally:
-        conn.close()
-    print(
-        ("N: %s\n"
-         "M: %s\n"
-         "First twenty names (with ratings and true feature count):\n%s\n"
-         "First twenty features:\n%s\n") %
-        (
-            len(data.names),
-            len(data.features),
-            "\n".join(
-                "\t%s (%s) (%s)" % (n, r, c) for n, r, c in
-                zip(
-                    data.names[:20],
-                    data.labels[:20],
-                    [len([f for f in fs if f]) for fs in data.features[:20]])),
-            "\n".join("\t%s" % (f,) for f in data.features[:20])))
+    logging.info("building samples...")
+    samples = [
+        [name_feature(i), y, r] + genre_features(gs)
+        for i, _, y, r, gs in titles]
+    labels = [normalized_rating(i) for i, _, _, _, _ in titles]
 
-
-def register(parser):
-    """Register flags for main() above."""
-    parser.add_argument(
-        "--database-uri",
-        help="sqlite database uri",
-        default="data/imdb/imdb.db",
-        dest="database_uri")
-    parser.add_argument(
-        "--prob",
-        help="probability of choosing a given title",
-        default=.05,
-        type=float,
-        dest="prob")
-
-
-if __name__ == "__main__":
-    app.run(main, register)
+    return samples, labels
