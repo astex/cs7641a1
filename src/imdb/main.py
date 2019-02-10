@@ -6,11 +6,13 @@ import sqlite3
 from .. import app
 from .. import data as datalib
 
+from . import neuralnet
 from . import read as readlib
 from . import tree
 
 
 def register(parser):
+    neuralnet.register()
     tree.register()
 
     parser.add_argument(
