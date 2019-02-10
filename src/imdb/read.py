@@ -1,6 +1,7 @@
 """A module to read imdb data into features."""
 
 import logging
+import os
 
 
 def listall(curs):
@@ -45,7 +46,7 @@ def list_titles(conn):
     """)
     for row in listall(curs):
         id_, title, year, runtime, genres = row
-        genres = set(genres.split(',')) if genres else []
+        genres = set(genres.split(',')) if genres else set()
         year = int(year) if year else None
         runtime = float(runtime) if runtime else None
         yield id_, title, year, runtime, genres
@@ -84,7 +85,44 @@ def list_name_counts(conn, rating):
     yield from listall(curs)
 
 
-def get_data(conn):
+def read_cache(cachedir):
+    """Read results from a cache."""
+    if (
+            not os.path.isfile(cachedir + "/samples.csv") or
+            not os.path.isfile(cachedir + "/labels.csv")):
+        return None
+
+    logging.info("reading from cache...")
+
+    samples = []
+    labels = []
+
+    with open(cachedir + "/samples.csv", "r") as samplecache:
+        for sample in samplecache:
+            parsed_sample = []
+            for i, s in enumerate(sample.split(",")):
+                if i == 2:
+                    parsed_sample.append(float(s))
+                else:
+                    parsed_sample.append(int(s))
+            samples.append(parsed_sample)
+
+    with open(cachedir + "/labels.csv", "r") as labelcache:
+        labels.extend(int(l) for l in labelcache)
+
+    return samples, labels
+
+
+def write_cache(cachedir, samples, labels):
+    """Write results to a cache."""
+    with open(cachedir + "/samples.csv", "w+") as samplecache:
+        samplecache.write(
+            "\n".join(",".join(str(f) for f in s) for s in samples))
+    with open(cachedir + "/labels.csv", "w+") as labelcache:
+        labelcache.write("\n".join(str(l) for l in labels))
+
+
+def get_data(conn, cachedir):
     """Gets some movie data from the database.
 
     Args:
@@ -107,19 +145,29 @@ def get_data(conn):
         Labels is a list indicating whether the sample with the same index has
         above-average (1), below-average (0), or no (-1) rating.
     """
+    data = read_cache(cachedir)
+    if data is not None:
+        return data
+
     logging.info("getting ratings...")
     ratings = dict(list_ratings(conn))
-    rating_values = [v for v in ratings.values() if v is not None]
+
+    logging.info("getting titles...")
+    titles = list(list_titles(conn))
+    titles = [(i, _, y, r, gs) for i, _, y, r, gs in titles if y and r]
+    tconsts = {i for i, _, _, _, _ in titles}
+    genres = list(set(g for _, _, _, _, gs in titles for g in gs))
+    genre_features = lambda gs: [1 if g in gs else 0 for g in genres]
+
+    logging.info("averaging ratings...")
+    rating_values = [
+        v for t, v in ratings.items()
+        if v is not None and t in tconsts]
     average_rating = sum(rating_values) / len(rating_values)
     normalized_rating = lambda i: (
         -1 if ratings.get(i) is None else
         0 if ratings[i] < average_rating else
         1)
-
-    logging.info("getting titles...")
-    titles = list(list_titles(conn))
-    genres = list(set(g for _, _, _, _, gs in titles for g in gs))
-    genre_features = lambda gs: [g in gs for g in genres]
 
     logging.info("getting big names...")
     namecounts = dict(list_name_counts(conn, average_rating))
@@ -130,5 +178,8 @@ def get_data(conn):
         [name_feature(i), y, r] + genre_features(gs)
         for i, _, y, r, gs in titles]
     labels = [normalized_rating(i) for i, _, _, _, _ in titles]
+
+    logging.info("updating cache...")
+    write_cache(cachedir, samples, labels)
 
     return samples, labels
