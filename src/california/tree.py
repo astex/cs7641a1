@@ -18,6 +18,15 @@ def plot_depth(data, plotter):
         plotter.plot(classifier, depth, ldata, tdata)
 
 
+def plot_depth_entropy(data, plotter):
+    ldata, tdata = datalib.partition(data, (.8, .2))
+    for depth in range(1, MAX_DEPTH):
+        classifier = sklearn.tree.DecisionTreeClassifier(
+            max_depth=depth,
+            criterion="entropy")
+        plotter.plot(classifier, depth, ldata, tdata)
+
+
 def plot_size(data, plotter):
     ldata, tdata = datalib.partition(data, (.8, .2))
 
@@ -45,3 +54,4 @@ def register():
     datalib.register_plotfunc("tree", "depth", plot_depth)
     datalib.register_plotfunc("tree", "size", plot_size)
     datalib.register_plotfunc("tree_prune", "alpha", plot_ccp_alpha_prune)
+    datalib.register_plotfunc("tree_entropy", "depth", plot_depth_entropy)
