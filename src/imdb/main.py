@@ -65,23 +65,13 @@ def main(args):
             plot(data, plotter)
         except KeyboardInterrupt:
             logging.info("caught keyboard interrupt. plotting and continuing.")
-            plotter.learning_plot.render_to_file(
-                args.outdir + "/%s.svg" % (plotfunc,))
-            plotter.fit_timing_plot.render_to_file(
-                args.outdir + "/%s_ftime.svg" % (plotfunc,))
-            plotter.score_timing_plot.render_to_file(
-                args.outdir + "/%s_stime.svg" % (plotfunc,))
+            plotter.write(args.outdir, plotfunc)
             continue
         except Exception:
             logging.exception("error in %s. continuing...", plotfunc)
             continue
 
-        plotter.learning_plot.render_to_file(
-            args.outdir + "/%s.svg" % (plotfunc,))
-        plotter.fit_timing_plot.render_to_file(
-            args.outdir + "/%s_ftime.svg" % (plotfunc,))
-        plotter.score_timing_plot.render_to_file(
-            args.outdir + "/%s_stime.svg" % (plotfunc,))
+        plotter.write(args.outdir, plotfunc)
 
 
 if __name__ == "__main__":

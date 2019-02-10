@@ -134,3 +134,12 @@ class Plotter:
         self.lerr.append((xval, 1 - classifier.score(*ldata)))
         self.terr.append((xval, 1 - classifier.score(*tdata)))
         self.stimes.append((xval, next(timer)))
+
+    def write(self, outdir, name):
+        def write_plot(plot, suffix=""):
+            plot.render_to_file(outdir + "/%s%s.svg" % (name, suffix))
+            plot.render_to_png(outdir + "/%s%s.png" % (name, suffix))
+
+        write_plot(self.learning_plot)
+        write_plot(self.fit_timing_plot, "_ftime")
+        write_plot(self.score_timing_plot, "_stime")
