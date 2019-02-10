@@ -9,12 +9,14 @@ from .. import data as datalib
 from . import boosting
 from . import neuralnet
 from . import read as readlib
+from . import svm
 from . import tree
 
 
 def register(parser):
     boosting.register()
     neuralnet.register()
+    svm.register()
     tree.register()
 
     parser.add_argument(
