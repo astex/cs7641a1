@@ -33,29 +33,30 @@ folks of a more scientific bent may prefer conda. But, the simplest way I can
 think of is this (run from the project directory):
 
 ```bash
-$ pip install -r requirements.txt
+$ pip install -r builddeps.txt
+$ pip install -r deps.txt
 ```
 
-## Data
+## Running
 
-[Details](data)
-
-You will also need to retrieve some data from the internet. You can check out
-the details for each data set in the link above. Or you can just run the
-shortcut script to grab everything:
+Everything you need in order to generate the plots is included, so you can go
+ahead and run the scripts.
 
 ```bash
-$ ./data/get.sh
+$ python -m src.california.main all; python -m src.imdb.main all;
 ```
 
-## Paper
+This will take around a day to execute and will use an awful lot of memory and
+processing power. Alternatively, you can regenerate specific plots by passing a
+list of plot names instead of `all`. You can see the plot names in the
+applications' help texts:
 
-You can find the final turned-in paper for the project [here](paper/paper.pdf).
-This is compiled latex/biblatex. You can compile it yourself by navigating to
-the `paper` directory and running `make`.
+```bash
+$ python -m src.california.main -h
+$ python -m src.imdb.main -h
+```
 
 ## License
 
 This is a homework assignment, not production software. You may run it and look
-at it, but may not redistribute it or use it in any production system for any
-reason.
+at it, but may not redistribute it or use it in any system for any reason.

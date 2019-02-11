@@ -12,12 +12,10 @@ data/nyt/*
 # California housing (from scikit-learn)
 data/california/*
 
-# LaTeX artifacts
+# The paper ...
 paper/*
-!paper/paper.pdf
-!paper/paper.tex
-!paper/paper.bib
-!paper/makefile
+# ... but not the plots.
+!paper/plots
 
 # Python
 __pycache__
@@ -25,6 +23,3 @@ __pycache__
 
 # OSX
 .DS_Store
-
-# The paper
-paper/*
