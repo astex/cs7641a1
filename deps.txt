@@ -1,0 +1,2 @@
+pygal==2.4.0
+git+git://github.com/scikit-learn/scikit-learn.git@refs/pull/12887/head#egg=scikit-learn
